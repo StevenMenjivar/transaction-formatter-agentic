@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Formatter</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">TF</div><span>Transaction<br>Formatter</span></div>
+    <nav aria-label="Navegación principal">
+      <div class="nav-label">WORKSPACE</div>
+      <button type="button" class="nav-item active" data-target="overview" aria-current="page">▦ &nbsp; Normalización</button>
+      <button type="button" class="nav-item" data-target="source-panel">⌁ &nbsp; Procesamiento JSON</button>
+    </nav>
+    <nav aria-label="Sistema">
+      <div class="nav-label">SISTEMA</div>
+      <button type="button" class="nav-item" data-target="configuration">⚙ &nbsp; Configuración</button>
+      <button type="button" class="nav-item" data-target="documentation">ⓘ &nbsp; Documentación</button>
+    </nav>
+    <div class="side-note"><strong>Procesamiento en memoria</strong><br>Los datos se procesan temporalmente y no se guardan en una base de datos.</div>
+  </aside>
+  <main class="main">
+    <header class="topbar" id="overview"><div><div class="eyebrow">Workspace / Data tools</div><h1 class="h1">Normalizador de transacciones</h1><p class="subtitle">Estandariza transacciones JSON provenientes de múltiples fuentes.</p></div><span class="pill">● Sistema listo</span></header>
+    <div id="notice" class="hidden"></div>
+    <section class="panel" id="source-panel">
+      <div class="panel-head"><div><h2>Fuente de datos</h2><div class="muted" style="font-size:12px;margin-top:3px">Carga un archivo o pega el contenido JSON para comenzar.</div></div><span class="eyebrow">PASO 01</span></div>
+      <div class="input-grid">
+        <div id="dropzone" class="dropzone"><div class="drop-icon">↥</div><strong>Arrastra tu archivo JSON aquí</strong><small>o selecciona un archivo desde tu equipo · Máximo 10 MB</small><button class="btn secondary" id="chooseFile">Seleccionar archivo</button><input id="fileInput" type="file" accept=".json,application/json"></div>
+        <div><div class="panel-head" style="margin-bottom:8px"><strong style="font-size:13px">O pega tu JSON</strong><button class="btn ghost" id="loadExample" style="padding:6px 9px;font-size:11px">Cargar ejemplo</button></div><textarea id="jsonInput" spellcheck="false" placeholder='[ { "amount": "100.50", "currency": "USD" } ]'></textarea></div>
+      </div>
+      <div class="settings" id="configuration"><div class="settings-heading">Configuración del procesamiento</div><label>Zona horaria <select id="timezone"><option value="UTC">UTC</option><option value="America/El_Salvador">America/El_Salvador</option><option value="America/New_York">America/New_York</option><option value="Europe/Madrid">Europe/Madrid</option></select></label><label>Fechas ambiguas <select id="dateOrder"><option value="DMY">DD/MM/YYYY</option><option value="MDY">MM/DD/YYYY</option></select></label><span>Un archivo por ejecución · Hasta 50,000 elementos</span></div>
+      <div class="actions"><button class="btn" id="processBtn">▶ &nbsp; Normalizar transacciones</button><button class="btn ghost" id="clearBtn">Limpiar</button><span id="fileName" class="muted" style="font-size:12px"></span></div>
+    </section>
+    <section id="results" class="hidden">
+      <div class="panel-head"><div><h2>Resumen del procesamiento</h2><div class="muted" style="font-size:12px">Indicadores calculados a partir de los registros recibidos.</div></div><span class="pill">Procesamiento completado</span></div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Procesadas</div><div class="metric-value" id="mProcessed">0</div><div class="metric-foot">Elementos detectados</div></div>
+        <div class="metric"><div class="metric-label">Válidas</div><div class="metric-value green" id="mValid">0</div><div class="metric-foot" id="mValidPct">0% del total</div></div>
+        <div class="metric"><div class="metric-label">Inválidas</div><div class="metric-value red" id="mInvalid">0</div><div class="metric-foot" id="mInvalidPct">0% del total</div></div>
+        <div class="metric"><div class="metric-label">Con advertencias</div><div class="metric-value amber" id="mWarnings">0</div><div class="metric-foot">Requieren revisión</div></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Monedas desconocidas</div><div class="metric-value" id="mCurrency">0</div></div>
+        <div class="metric"><div class="metric-label">Fechas no disponibles</div><div class="metric-value" id="mDates">0</div></div>
+        <div class="metric"><div class="metric-label">Estados distintos</div><div class="metric-value" id="mStatuses">0</div></div>
+        <div class="metric"><div class="metric-label">Monedas distintas</div><div class="metric-value" id="mCurrencies">0</div></div>
+      </div>
+      <div class="result-grid">
+        <section class="panel"><div class="panel-head"><h2>Distribución por estado</h2></div><div class="chart-wrap"><canvas id="statusChart"></canvas></div></section>
+        <section class="panel"><div class="panel-head"><h2>Distribución por moneda</h2></div><div class="chart-wrap"><canvas id="currencyChart"></canvas></div></section>
+      </div>
+      <section class="panel"><div class="panel-head"><h2>Transacciones válidas</h2><span id="validCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>REFERENCIA</th><th>MONTO</th><th>MONEDA</th><th>FECHA</th><th>ESTADO</th><th>DETALLE</th></tr></thead><tbody id="validRows"></tbody></table></div></section>
+      <section class="panel"><div class="panel-head"><h2>Transacciones inválidas</h2><span id="invalidCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>POSICIÓN</th><th>RUTA</th><th>MOTIVO</th><th>DETALLE</th></tr></thead><tbody id="invalidRows"></tbody></table></div></section>
+      <section class="panel"><div class="panel-head"><h2>Resultado estandarizado</h2><div class="actions" style="margin:0"><button class="btn secondary" id="copyBtn">Copiar JSON</button><button class="btn" id="downloadBtn">↓ Descargar JSON</button></div></div><div class="codebox" id="outputJson"></div></section>
+      <section class="panel" id="inspection-panel"><div class="panel-head"><h2>Inspección de transacción</h2><span class="muted">Selecciona “Ver” en la tabla</span></div><div id="inspection" class="empty">Aún no se ha seleccionado una transacción.</div></section>
+    </section>
+    <section class="panel documentation-panel" id="documentation">
+      <div class="panel-head"><div><h2>Documentación</h2><div class="muted" style="font-size:12px;margin-top:3px">Guía rápida de uso y referencia de la API.</div></div><span class="eyebrow">AYUDA</span></div>
+      <div class="documentation-grid">
+        <article><h3>1. Cargar datos</h3><p>Selecciona un archivo JSON o pega directamente su contenido. También puedes utilizar el botón «Cargar ejemplo» para probar la aplicación.</p></article>
+        <article><h3>2. Configurar y procesar</h3><p>Define la zona horaria y el orden de las fechas ambiguas. Después, pulsa «Normalizar transacciones» para ejecutar el procesamiento.</p></article>
+        <article><h3>3. Revisar resultados</h3><p>Consulta las métricas, los gráficos y las tablas de transacciones válidas e inválidas. Pulsa «Ver» para consultar el JSON original, el resultado normalizado y su trazabilidad.</p></article>
+        <article><h3>4. Exportar</h3><p>Copia el resultado estandarizado al portapapeles o descárgalo como archivo JSON.</p></article>
+      </div>
+      <div class="api-doc-link"><span>Referencia interactiva de los endpoints:</span> <a href="/docs" target="_blank" rel="noopener noreferrer">Abrir documentación de la API</a></div>
+    </section>
+    <div class="footer">Transaction Normalizer · Procesamiento temporal en memoria · Sin persistencia de datos</div>
+  </main>
+</div>
+<script src="/static/js/app.js"></script>
+</body></html>
