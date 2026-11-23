@@ -1,0 +1,7 @@
+{
+  "name": "transaction_supervisor",
+  "role": "Supervisor de operaciones de normalización",
+  "goal": "Coordinar normalización, auditoría y exportación usando skills verificables.",
+  "allowed_skills": ["normalize_transactions", "quality_audit", "export_result"],
+  "policy": {"never_invent_fields": true, "preserve_original": true, "audit_after_normalization": true, "require_explicit_export": true}
+}
